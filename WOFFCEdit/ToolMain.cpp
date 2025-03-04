@@ -19,6 +19,14 @@ ToolMain::ToolMain()
 	m_toolInputCommands.left		= false;
 	m_toolInputCommands.right		= false;
 	
+	TRACKMOUSEEVENT m_TrackMouseEvent;
+	m_TrackMouseEvent.cbSize = sizeof(TRACKMOUSEEVENT);
+	m_TrackMouseEvent.dwFlags = TME_LEAVE;
+	m_TrackMouseEvent.hwndTrack = m_toolHandle;
+	m_TrackMouseEvent.dwHoverTime = 0;
+	
+	::_TrackMouseEvent(&m_TrackMouseEvent);
+
 }
 
 
@@ -305,7 +313,16 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_keyArray[msg->wParam] = false;
 		break;
 
+	case WM_RBUTTONUP:
+		m_toolInputCommands.updateBallpointCamera = false;
+		break;
+
+	case WM_RBUTTONDOWN:
+		m_toolInputCommands.updateBallpointCamera = true;
+		break;
+
 	case WM_MOUSEMOVE:
+		m_toolInputCommands.MousePos = DirectX::SimpleMath::Vector2(msg->pt.x, msg->pt.y);
 		break;
 
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too

@@ -1,5 +1,7 @@
-#include "Camera.h"
+﻿#include "Camera.h"
 #include "InputCommands.h"
+
+using namespace DirectX::SimpleMath;
 
 Camera::Camera()
 {
@@ -33,22 +35,95 @@ Camera::Camera()
 
 void Camera::Update(InputCommands inputCommands)
 {
-	if (inputCommands.rotRight)
+	if (!inputCommands.updateBallpointCamera)
 	{
-		m_camOrientation.y -= m_camRotRate;
+		if (inputCommands.rotRight)
+		{
+			m_camOrientation.y -= m_camRotRate;
+		}
+		if (inputCommands.rotLeft)
+		{
+			m_camOrientation.y += m_camRotRate;
+		}
 	}
-	if (inputCommands.rotLeft)
+	else
 	{
-		m_camOrientation.y += m_camRotRate;
+		MouseDirectionVector = PreviousMousePosition - inputCommands.MousePos;
+
+		Vector2 MouseDirectionVectorNormalized = MouseDirectionVector;
+		MouseDirectionVectorNormalized.Normalize();
+
+
+		//if (MouseDirectionVector.x > 0)
+		//{
+		//	m_camOrientation.y -= m_camRotRate;
+		//}
+		//else if (MouseDirectionVector.x < 0)
+		//{
+		//	m_camOrientation.y += m_camRotRate;
+		//}
+
+		//m_camOrientation.z += MouseDirectionVectorNormalized.y * m_camRotRate;
+		//m_camOrientation.y += MouseDirectionVectorNormalized.x * m_camRotRate;
+
+		m_camOrientation.z += MouseDirectionVector.y;
+		m_camOrientation.y += MouseDirectionVector.x;
+
+		/*if (MouseDirectionVector.y > 0)
+		{
+			m_camOrientation.z -= MouseDirectionVectorNormalized.y;
+		}
+		else if (MouseDirectionVector.y < 0)
+		{
+			m_camOrientation.z += MouseDirectionVectorNormalized.y;
+		}*/
 	}
+
+
+	if (m_camOrientation.z > 90)
+	{
+		m_camOrientation.z = 90;
+	}
+	else if (m_camOrientation.z < -90)
+	{
+		m_camOrientation.z = -90;
+	}
+
+	// Pi in radians
+	float Pi = 3.1415 / 180;
+
+	float yawRadians = -m_camOrientation.y * Pi;
+	float pitchRadians = m_camOrientation.z * Pi;
+
+	//if (m_camOrientation.y > 180)
+	//{
+	//	m_camOrientation.y = 180;
+	//}
+	//else if (m_camOrientation.y < -180)
+	//{
+	//	m_camOrientation.y = -180;
+	//}
+
+	//if (pitchDegrees > 180)
+	//{
+	//	pitchDegrees = 180;
+	//}
+	//else if (pitchDegrees < 0)
+	//{
+	//	pitchDegrees = 0;
+	//}
+
+	//x = rCosΘCosΦ
+	//y = rsinΦ
+	//z = rSinΘCosΦ
 
 	//create look direction from Euler angles in m_camOrientation
-	m_camLookDirection.x = sin((m_camOrientation.y) * 3.1415 / 180);
-	m_camLookDirection.z = cos((m_camOrientation.y) * 3.1415 / 180);
-	m_camLookDirection.Normalize();
+	m_camLookDirection.x = cos(yawRadians) * cos(pitchRadians);
+	m_camLookDirection.y = sin(pitchRadians);
+	m_camLookDirection.z = sin(yawRadians) * cos(pitchRadians);
 
 	//create right vector from look Direction
-	m_camLookDirection.Cross(DirectX::SimpleMath::Vector3::UnitY, m_camRight);
+	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
 	//process input and update stuff
 	if (inputCommands.forward)
@@ -70,4 +145,11 @@ void Camera::Update(InputCommands inputCommands)
 
 	//update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
+
+	PreviousMousePosition = inputCommands.MousePos;
+}
+
+Vector2 Camera::CalculateMouseDirection()
+{
+	return Vector2(0, 0);
 }

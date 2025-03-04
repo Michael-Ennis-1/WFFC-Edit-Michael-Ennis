@@ -8,6 +8,13 @@ class Camera
 public:
 	Camera();
 
+	void Update(InputCommands inputCommands);
+
+	DirectX::SimpleMath::Vector2 CalculateMouseDirection();
+
+	DirectX::SimpleMath::Vector2 PreviousMousePosition = { 0, 0 };
+	DirectX::SimpleMath::Vector2 MouseDirectionVector = { 0, 0 };
+
 	DirectX::SimpleMath::Vector3		m_camPosition;
 	DirectX::SimpleMath::Vector3		m_camOrientation;
 	DirectX::SimpleMath::Vector3		m_camLookAt;
@@ -16,5 +23,6 @@ public:
 	float m_camRotRate;
 	float m_movespeed;
 
-	void Update(InputCommands inputCommands);
+	float m_pitchDegrees;
+	float m_yawDegrees;
 };

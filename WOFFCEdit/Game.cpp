@@ -171,18 +171,23 @@ void Game::Render()
     m_deviceResources->PIXBeginEvent(L"Render");
     auto context = m_deviceResources->GetD3DDeviceContext();
 
-	if (m_grid)
-	{
-		// Draw procedurally generated dynamic grid
-		const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
-		const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
-		DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
-	}
-	//CAMERA POSITION ON HUD
-	m_sprites->Begin();
-	WCHAR   Buffer[256];
-	std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
-	m_font->DrawString(m_sprites.get(), var.c_str() , XMFLOAT2(100, 10), Colors::Yellow);
+    if (m_grid)
+    {
+        // Draw procedurally generated dynamic grid
+        const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
+        const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
+        DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
+    }
+    //CAMERA POSITION ON HUD
+    m_sprites->Begin();
+    WCHAR   Buffer[256];
+    std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
+    m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Yellow);
+
+    WCHAR Buffer2[256];
+    std::wstring var2 = L"Cam Pitch: " + std::to_wstring(m_Camera->m_camOrientation.z) + L"Cam Yaw: " + std::to_wstring(m_Camera->m_camOrientation.y);
+    m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Green);
+
 	m_sprites->End();
 
 	//RENDER OBJECTS FROM SCENEGRAPH
@@ -468,6 +473,8 @@ void Game::CreateDeviceDependentResources()
     }
 
     m_font = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
+
+    m_font2 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
 
 //    m_shape = GeometricPrimitive::CreateTeapot(context, 4.f, 8);
 
