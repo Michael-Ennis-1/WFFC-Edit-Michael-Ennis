@@ -6,7 +6,7 @@ using namespace DirectX::SimpleMath;
 Camera::Camera()
 {
 	m_movespeed = 0.3f;
-	m_camRotRate = 3.0;
+	m_camRotRate = 1.0;
 
 	m_camPosition.x = 0.0f;
 	m_camPosition.y = 3.7f;
@@ -53,30 +53,8 @@ void Camera::Update(InputCommands inputCommands)
 		Vector2 MouseDirectionVectorNormalized = MouseDirectionVector;
 		MouseDirectionVectorNormalized.Normalize();
 
-
-		//if (MouseDirectionVector.x > 0)
-		//{
-		//	m_camOrientation.y -= m_camRotRate;
-		//}
-		//else if (MouseDirectionVector.x < 0)
-		//{
-		//	m_camOrientation.y += m_camRotRate;
-		//}
-
-		//m_camOrientation.z += MouseDirectionVectorNormalized.y * m_camRotRate;
-		//m_camOrientation.y += MouseDirectionVectorNormalized.x * m_camRotRate;
-
 		m_camOrientation.z += MouseDirectionVector.y;
 		m_camOrientation.y += MouseDirectionVector.x;
-
-		/*if (MouseDirectionVector.y > 0)
-		{
-			m_camOrientation.z -= MouseDirectionVectorNormalized.y;
-		}
-		else if (MouseDirectionVector.y < 0)
-		{
-			m_camOrientation.z += MouseDirectionVectorNormalized.y;
-		}*/
 	}
 
 
@@ -92,30 +70,12 @@ void Camera::Update(InputCommands inputCommands)
 	// Pi in radians
 	float Pi = 3.1415 / 180;
 
-	float yawRadians = -m_camOrientation.y * Pi;
-	float pitchRadians = m_camOrientation.z * Pi;
-
-	//if (m_camOrientation.y > 180)
-	//{
-	//	m_camOrientation.y = 180;
-	//}
-	//else if (m_camOrientation.y < -180)
-	//{
-	//	m_camOrientation.y = -180;
-	//}
-
-	//if (pitchDegrees > 180)
-	//{
-	//	pitchDegrees = 180;
-	//}
-	//else if (pitchDegrees < 0)
-	//{
-	//	pitchDegrees = 0;
-	//}
-
 	//x = rCosΘCosΦ
 	//y = rsinΦ
 	//z = rSinΘCosΦ
+
+	float yawRadians = -m_camOrientation.y * Pi;
+	float pitchRadians = m_camOrientation.z * Pi;
 
 	//create look direction from Euler angles in m_camOrientation
 	m_camLookDirection.x = cos(yawRadians) * cos(pitchRadians);

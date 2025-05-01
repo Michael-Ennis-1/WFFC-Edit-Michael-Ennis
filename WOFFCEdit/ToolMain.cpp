@@ -87,7 +87,7 @@ void ToolMain::onActionLoad()
 	sqlCommand = "SELECT * from Objects";				//sql command which will return all records from the objects table.
 	//Send Command and fill result object
 	rc = sqlite3_prepare_v2(m_databaseConnection, sqlCommand, -1, &pResults, 0 );
-	
+
 	//loop for each row in results until there are no more rows.  ie for every row in the results. We create and object
 	while (sqlite3_step(pResults) == SQLITE_ROW)
 	{	

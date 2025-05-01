@@ -2,12 +2,12 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\admin\Documents\GitHub\WFFC-Edit-Michael-Ennis\WOFFCEdit\Debug\WoFEdit.exe</FullPath>
+      <FullPath>E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Debug\WoFEdit.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles>
     <ContentFile>
-      <FullPath>C:\Users\admin\Documents\GitHub\WFFC-Edit-Michael-Ennis\WOFFCEdit\database\data\Scene1.fbx</FullPath>
+      <FullPath>E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\database\data\Scene1.fbx</FullPath>
     </ContentFile>
   </ContentFiles>
   <SatelliteDlls />

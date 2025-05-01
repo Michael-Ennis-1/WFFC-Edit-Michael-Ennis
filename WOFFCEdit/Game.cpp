@@ -112,11 +112,7 @@ void Game::Tick(InputCommands *Input)
 // Updates the world.
 void Game::Update(DX::StepTimer const& timer)
 {
-	//TODO  any more complex than this, and the camera should be abstracted out to somewhere else
-	//camera motion is on a plane, so kill the 7 component of the look direction
-	Vector3 planarMotionVector = m_Camera->m_camLookDirection;
-	planarMotionVector.y = 0.0;
-
+    // Pass input commands to camera
 	m_Camera->Update(m_InputCommands);
 
 	//apply camera vectors
@@ -151,8 +147,6 @@ void Game::Update(DX::StepTimer const& timer)
         }
     }
 #endif
-
-   
 }
 #pragma endregion
 
