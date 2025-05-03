@@ -56,6 +56,9 @@ void Game::Initialize(HWND window, int width, int height)
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
 
+    // Initialize window size
+    GetClientRect(window, &m_WindowRect);
+
 #ifdef DXTK_AUDIO
     // Create DirectXTK for Audio objects
     AUDIO_ENGINE_FLAGS eflags = AudioEngine_Default;
@@ -113,14 +116,20 @@ void Game::Tick(InputCommands *Input)
 void Game::Update(DX::StepTimer const& timer)
 {
     // Pass input commands to camera
-	m_Camera->Update(m_InputCommands);
+	m_Camera->Update(m_InputCommands, timer.GetElapsedSeconds());
 
-	//apply camera vectors
-    m_view = Matrix::CreateLookAt(m_Camera->m_camPosition, m_Camera->m_camLookAt, Vector3::UnitY);
+    if (m_InputCommands.leftMouseDown)
+    {
+        bool Test = HasObjectBeenPicked();
+        if (Test)
+        {
+            bool BreakpointCheck = true;
+        }
+    }
 
-    m_batchEffect->SetView(m_view);
+    m_batchEffect->SetView(m_Camera->m_view);
     m_batchEffect->SetWorld(Matrix::Identity);
-	m_displayChunk.m_terrainEffect->SetView(m_view);
+	m_displayChunk.m_terrainEffect->SetView(m_Camera->m_view);
 	m_displayChunk.m_terrainEffect->SetWorld(Matrix::Identity);
 
 #ifdef DXTK_AUDIO
@@ -199,7 +208,7 @@ void Game::Render()
 
 		XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
 
-		m_displayList[i].m_model->Draw(context, *m_states, local, m_view, m_projection, false);	//last variable in draw,  make TRUE for wireframe
+		m_displayList[i].m_model->Draw(context, *m_states, local, m_Camera->m_view, m_Camera->m_projection, false);	//last variable in draw,  make TRUE for wireframe
 
 		m_deviceResources->PIXEndEvent();
 	}
@@ -236,6 +245,33 @@ void Game::Clear()
     context->RSSetViewports(1, &viewport);
 
     m_deviceResources->PIXEndEvent();
+}
+
+bool Game::HasObjectBeenPicked()
+{
+    // Caches the mouse position in screen and forward
+    Vector3 mouseScreenPos = Vector3(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 0);
+    Vector3 mouseForwardDir = Vector3(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f);
+
+    D3D11_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
+    for (int i = 0; i < m_displayList.size(); i++)
+    {
+        // Create world matrix for display object
+        XMMATRIX objectWorldMatrix = m_world * m_displayList[i].GetObjectMatrix();
+
+        // Converts mouse coordinates to
+        XMVECTOR nearVector = XMVector3Unproject(mouseScreenPos, 0.0f, 0.0f, m_WindowRect.right, m_WindowRect.bottom, viewport.MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection, m_Camera->m_view, objectWorldMatrix);
+        XMVECTOR farVector = XMVector3Unproject(mouseForwardDir, 0.0f, 0.0f, m_WindowRect.right, m_WindowRect.bottom, viewport.MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection, m_Camera->m_view, objectWorldMatrix);
+
+        XMVECTOR RayDirectionVector = farVector - nearVector;
+        RayDirectionVector = XMVector3Normalize(RayDirectionVector);
+
+        Ray Linecast{ nearVector, RayDirectionVector };
+        
+        //for (int j = 0; j < m_displayList[i].)
+    }
+
+    return false;
 }
 
 void XM_CALLCONV Game::DrawGrid(FXMVECTOR xAxis, FXMVECTOR yAxis, FXMVECTOR origin, size_t xdivs, size_t ydivs, GXMVECTOR color)
@@ -502,15 +538,17 @@ void Game::CreateWindowSizeDependentResources()
     }
 
     // This sample makes use of a right-handed coordinate system using row-major matrices.
-    m_projection = Matrix::CreatePerspectiveFieldOfView(
+    m_Camera->UpdateProjectionView(aspectRatio, fovAngleY); = Matrix::CreatePerspectiveFieldOfView(
         fovAngleY,
         aspectRatio,
         0.01f,
         1000.0f
     );
 
-    m_batchEffect->SetProjection(m_projection);
-	
+    m_batchEffect->SetProjection(m_Camera->m_projection);
+
+    // Resize window when client window changes
+    m_WindowRect = size;
 }
 
 void Game::OnDeviceLost()

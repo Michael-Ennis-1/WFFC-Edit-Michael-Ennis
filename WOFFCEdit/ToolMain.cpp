@@ -301,7 +301,6 @@ void ToolMain::Tick(MSG *msg)
 
 void ToolMain::UpdateInput(MSG * msg)
 {
-
 	switch (msg->message)
 	{
 		//Global inputs,  mouse position and keys etc
@@ -314,22 +313,27 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_RBUTTONUP:
-		m_toolInputCommands.updateBallpointCamera = false;
+		m_toolInputCommands.rightMouseDown = false;
 		break;
 
 	case WM_RBUTTONDOWN:
-		m_toolInputCommands.updateBallpointCamera = true;
+		m_toolInputCommands.rightMouseDown = true;
 		break;
 
 	case WM_MOUSEMOVE:
 		m_toolInputCommands.MousePos = DirectX::SimpleMath::Vector2(msg->pt.x, msg->pt.y);
 		break;
 
-	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
-		//set some flag for the mouse button in inputcommands
+	case WM_LBUTTONUP:
+		m_toolInputCommands.leftMouseDown = false;
+		break;
+
+	case WM_LBUTTONDOWN:	
+		m_toolInputCommands.leftMouseDown = true;
 		break;
 
 	}
+
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
 	//WASD movement
 	if (m_keyArray['W'])
@@ -368,3 +372,4 @@ void ToolMain::UpdateInput(MSG * msg)
 
 	//WASD
 }
+

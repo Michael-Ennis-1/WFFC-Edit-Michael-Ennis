@@ -9,6 +9,7 @@ struct InputCommands
 	bool rotRight;
 	bool rotLeft;
 
-	bool updateBallpointCamera;
+	bool rightMouseDown;
+	bool leftMouseDown;
 	DirectX::SimpleMath::Vector2 MousePos = { 0, 0 };
 };

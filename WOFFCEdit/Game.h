@@ -64,6 +64,9 @@ private:
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
 
+	// Check if object has been picked - CUSTOM
+	bool HasObjectBeenPicked();
+
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
 	//tool specific
@@ -86,6 +89,9 @@ private:
 
 	// Camera
 	std::unique_ptr<Camera> m_Camera;
+
+	// Window
+	RECT m_WindowRect;
 
     // DirectXTK objects.
     std::unique_ptr<DirectX::CommonStates>                                  m_states;
@@ -118,10 +124,6 @@ private:
 #endif
 
     DirectX::SimpleMath::Matrix                                             m_world;
-    DirectX::SimpleMath::Matrix                                             m_view;
-    DirectX::SimpleMath::Matrix                                             m_projection;
-
-
 };
 
 std::wstring StringToWCHART(std::string s);

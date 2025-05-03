@@ -1,4 +1,6 @@
 #include "DisplayObject.h"
+#include "SimpleMath.h"
+#include <DirectXMath.h>
 
 DisplayObject::DisplayObject()
 {
@@ -29,4 +31,17 @@ DisplayObject::DisplayObject()
 DisplayObject::~DisplayObject()
 {
 //	delete m_texture_diffuse;
+}
+
+DirectX::XMMATRIX DisplayObject::GetObjectMatrix()
+{
+	// Initialize translation, scale and rotation vectors to create object-local matrix
+	const DirectX::XMVECTOR translation = { m_position.x, m_position.y, m_position.z };
+	const DirectX::XMVECTOR scale = { m_scale.x, m_scale.y, m_scale.z };
+	const DirectX::XMVECTOR rotation = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(m_orientation.y * 3.1415 / 180,
+																							m_orientation.x * 3.1415 / 180,
+																							m_orientation.z * 3.1415 / 180);
+
+	return DirectX::XMMatrixTransformation(DirectX::XMVECTORF32{ 0, 0, 0, 0 }, DirectX::SimpleMath::Quaternion::Identity, scale,
+											DirectX::XMVECTORF32{ 0, 0, 0, 0 }, rotation, translation);
 }
