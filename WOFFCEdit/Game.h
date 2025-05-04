@@ -53,6 +53,15 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 
+	// Allows for modification of display object settings within MFC window
+	std::vector<DisplayObject> GetDisplayList();
+
+	DisplayObject GetDisplayObject(int ID);
+	void EditDisplayObject(DisplayObject NewSettings, int ID);
+
+	// Selected Object ID
+	int m_SelectedObjectID = -1;
+
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
@@ -97,7 +106,6 @@ private:
 	RECT m_WindowRect;
 
 	// Object ID
-	int m_SelectedObjectID = -1;
 	int m_HoveredObjectID = -1;
 
 	// Mouse picking and object selection

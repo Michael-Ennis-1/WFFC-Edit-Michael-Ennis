@@ -129,6 +129,7 @@ void Game::Update(DX::StepTimer const& timer)
             {
                 // Select the hovered object
                 m_SelectedObjectID = m_HoveredObjectID;
+                //objectDLG.DoModal();
                 m_HasSelected = true;
             }
             else
@@ -571,6 +572,21 @@ void Game::BuildDisplayChunk(ChunkObject * SceneChunk)
 void Game::SaveDisplayChunk(ChunkObject * SceneChunk)
 {
 	m_displayChunk.SaveHeightMap();			//save heightmap to file.
+}
+
+std::vector<DisplayObject> Game::GetDisplayList()
+{
+    return m_displayList;
+}
+
+DisplayObject Game::GetDisplayObject(int ID)
+{
+    return m_displayList[ID];
+}
+
+void Game::EditDisplayObject(DisplayObject NewSettings, int ID)
+{
+    m_displayList[ID] = NewSettings;
 }
 
 #ifdef DXTK_AUDIO

@@ -70,6 +70,11 @@ void SelectDialogue::Select()
 
 }
 
+void SelectDialogue::OnCancel()
+{
+	End();
+}
+
 BOOL SelectDialogue::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();

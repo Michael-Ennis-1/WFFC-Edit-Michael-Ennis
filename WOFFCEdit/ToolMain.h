@@ -26,6 +26,11 @@ public: //methods
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
 
+	void EditDisplayObject(DisplayObject NewSettings, int ID);
+	DisplayObject GetDisplayObject(int ID);
+
+	std::vector<DisplayObject> GetDisplayList();
+
 public:	//variables
 	std::vector<SceneObject>    m_sceneGraph;	//our scenegraph storing all the objects in the current chunk
 	ChunkObject					m_chunk;		//our landscape chunk
@@ -51,6 +56,6 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;			//the current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
-
-	
+	// Force MFC to update object data
+	bool m_UpdateObjectData = false;
 };

@@ -39,7 +39,7 @@ ToolMain::~ToolMain()
 int ToolMain::getCurrentSelectionID()
 {
 
-	return m_selectedObject;
+	return m_d3dRenderer.m_SelectedObjectID;
 }
 
 void ToolMain::onActionInitialise(HWND handle, int width, int height)
@@ -188,6 +188,8 @@ void ToolMain::onActionLoad()
 	m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
 	//build the renderable chunk 
 	m_d3dRenderer.BuildDisplayChunk(&m_chunk);
+
+	// Proof of concept edit of specific variables for objects
 
 }
 
@@ -371,5 +373,20 @@ void ToolMain::UpdateInput(MSG * msg)
 	else m_toolInputCommands.rotLeft = false;
 
 	//WASD
+}
+
+void ToolMain::EditDisplayObject(DisplayObject NewSettings, int ID)
+{
+	m_d3dRenderer.EditDisplayObject(NewSettings, ID);
+}
+
+DisplayObject ToolMain::GetDisplayObject(int ID)
+{
+	return m_d3dRenderer.GetDisplayList()[ID];
+}
+
+std::vector<DisplayObject> ToolMain::GetDisplayList()
+{
+	return m_d3dRenderer.GetDisplayList();
 }
 
