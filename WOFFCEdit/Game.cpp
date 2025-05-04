@@ -120,11 +120,15 @@ void Game::Update(DX::StepTimer const& timer)
 
     if (m_InputCommands.leftMouseDown)
     {
-        bool Test = HasObjectBeenPicked();
-        if (Test)
+        if (HasObjectBeenPicked())
         {
             bool BreakpointCheck = true;
         }
+    }
+
+    if (HasObjectBeenPicked())
+    {
+        bool BreakpointCheck = true;
     }
 
     m_batchEffect->SetView(m_Camera->m_view);
@@ -174,12 +178,76 @@ void Game::Render()
     m_deviceResources->PIXBeginEvent(L"Render");
     auto context = m_deviceResources->GetD3DDeviceContext();
 
+    m_grid = true;
     if (m_grid)
     {
         // Draw procedurally generated dynamic grid
         const XMVECTORF32 xaxis = { 512.f, 0.f, 0.f };
         const XMVECTORF32 yaxis = { 0.f, 0.f, 512.f };
         DrawGrid(xaxis, yaxis, g_XMZero, 512, 512, Colors::Gray);
+    }
+
+    //bool TestRaytrace = true;
+    if (m_DisplayRaycast)
+    {
+        m_deviceResources->PIXBeginEvent(L"Draw grid");
+
+        auto context = m_deviceResources->GetD3DDeviceContext();
+        context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+        context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+        context->RSSetState(m_states->CullCounterClockwise());
+
+        m_batchEffect->Apply(context);
+
+        context->IASetInputLayout(m_batchInputLayout.Get());
+
+        m_batch->Begin();
+
+        /*m_batch->DrawLine(VertexPositionColor(m_nearpoint, Colors::Red),
+            VertexPositionColor(m_nearpoint + m_pickingDir, Colors::Red));*/
+        m_batch->DrawLine(VertexPositionColor(m_nearpoint, Colors::Red),
+            VertexPositionColor(m_farpoint, Colors::Red));
+
+        XMFLOAT3 corners[8];
+        m_displayList[m_SelectedObjectID].m_model->meshes[0]->boundingBox.GetCorners(corners); // Get 8 corners of the box
+
+        // Transform each corner by the object's world matrix
+        for (int i = 0; i < 8; ++i)
+        {
+            XMStoreFloat3(&corners[i], XMVector3Transform(XMLoadFloat3(&corners[i]), m_displayList[m_SelectedObjectID].GetObjectMatrix()));
+        }
+
+        // Define the 12 lines (edges) of a bounding box
+        const int edgeIndices[24] =
+        {
+            0, 1, 1, 2, 2, 3, 3, 0, // bottom face
+            4, 5, 5, 6, 6, 7, 7, 4, // top face
+            0, 4, 1, 5, 2, 6, 3, 7  // vertical edges
+        };
+
+        for (int i = 0; i < 24; i += 2)
+        {
+           m_batch->DrawLine(
+                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i]]), Colors::Red),
+                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i + 1]]), Colors::Red));
+        }
+
+        // Transform each corner by the object's world matrix
+        for (int i = 0; i < 8; ++i)
+        {
+            XMStoreFloat3(&corners[i], XMVector3Transform(XMLoadFloat3(&corners[i]), XMMatrixIdentity()));
+        }
+
+        for (int i = 0; i < 24; i += 2)
+        {
+            m_batch->DrawLine(
+                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i]]), Colors::Red),
+                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i + 1]]), Colors::Red));
+        }
+
+        m_batch->End();
+
+        m_deviceResources->PIXEndEvent();
     }
     //CAMERA POSITION ON HUD
     m_sprites->Begin();
@@ -190,6 +258,22 @@ void Game::Render()
     WCHAR Buffer2[256];
     std::wstring var2 = L"Cam Pitch: " + std::to_wstring(m_Camera->m_camOrientation.z) + L"Cam Yaw: " + std::to_wstring(m_Camera->m_camOrientation.y);
     m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Green);
+
+    WCHAR Buffer3[256];
+    std::wstring var3 = L"Obj Selected: " + std::to_wstring(m_SelectedObjectID);
+    m_font3->DrawString(m_sprites.get(), var3.c_str(), XMFLOAT2(100, 50), Colors::Red);
+
+    WCHAR Buffer4[256];
+    std::wstring var4 = L"Near Point X: " + std::to_wstring(XMVectorGetX(m_nearpoint))
+        + L"Near Point Y: " + std::to_wstring(XMVectorGetY(m_nearpoint))
+        + L"Near Point Z: " + std::to_wstring(XMVectorGetZ(m_nearpoint));
+    m_font4->DrawString(m_sprites.get(), var4.c_str(), XMFLOAT2(100, 70), Colors::Green);
+
+    //WCHAR Buffer5[256];
+    //std::wstring var5 = L"Near Point X: " + std::to_wstring(XMVectorGetX(m_farpoint))
+    //    + L"Near Point Y: " + std::to_wstring(XMVectorGetY(m_farpoint))
+    //    + L"Near Point Z: " + std::to_wstring(XMVectorGetZ(m_farpoint));
+    //m_font5->DrawString(m_sprites.get(), var5.c_str(), XMFLOAT2(100, 90), Colors::Green);
 
 	m_sprites->End();
 
@@ -249,28 +333,75 @@ void Game::Clear()
 
 bool Game::HasObjectBeenPicked()
 {
-    // Caches the mouse position in screen and forward
-    Vector3 mouseScreenPos = Vector3(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 0);
-    Vector3 mouseForwardDir = Vector3(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f);
+    //float MouseYFlipped = m_WindowRect.bottom - m_InputCommands.MousePos.y;
 
+    // Caches the mouse position in near and far plane
+    XMVECTOR mouseNearPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 0, 1);
+    Vector3 mouseFarPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f, 1);
+
+    float closestDistance = FLT_MAX;
+
+    // Cache viewport for projection of mouse coords to world
     D3D11_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
+
+    float dist = 0;
+   
+    // Iterate through all objects within the world to determine if we picked object
     for (int i = 0; i < m_displayList.size(); i++)
     {
-        // Create world matrix for display object
-        XMMATRIX objectWorldMatrix = m_world * m_displayList[i].GetObjectMatrix();
+        //Get the scale factor and translation of the object
+        const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
+        const XMVECTORF32 translate = {
+            m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z
+        };
 
-        // Converts mouse coordinates to
-        XMVECTOR nearVector = XMVector3Unproject(mouseScreenPos, 0.0f, 0.0f, m_WindowRect.right, m_WindowRect.bottom, viewport.MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection, m_Camera->m_view, objectWorldMatrix);
-        XMVECTOR farVector = XMVector3Unproject(mouseForwardDir, 0.0f, 0.0f, m_WindowRect.right, m_WindowRect.bottom, viewport.MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection, m_Camera->m_view, objectWorldMatrix);
+        //convert euler angles into a quaternion for the rotation of the object
+        XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(m_displayList[i].m_orientation.y * 3.1415 / 180,
+            m_displayList[i].m_orientation.x * 3.1415 / 180,
+            m_displayList[i].m_orientation.z * 3.1415 / 180);
 
-        XMVECTOR RayDirectionVector = farVector - nearVector;
-        RayDirectionVector = XMVector3Normalize(RayDirectionVector);
+        //create set the matrix of the selected object in the world based on the translation, scale and rotation.
+        XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate,
+            translate);
 
-        Ray Linecast{ nearVector, RayDirectionVector };
+        //Unproject the points on the near and far plane, with respect to the matrix we just created.
+        XMVECTOR nearPoint = XMVector3Unproject(mouseNearPlane, 0.0f, 0.0f, m_WindowRect.right,
+            m_WindowRect.bottom,
+            m_deviceResources->GetScreenViewport().MinDepth,
+            m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection,
+            m_Camera->m_view, local);
+        XMVECTOR farPoint = XMVector3Unproject(mouseFarPlane, 0.0f, 0.0f, m_WindowRect.right,
+            m_WindowRect.bottom,
+            m_deviceResources->GetScreenViewport().MinDepth,
+            m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection,
+            m_Camera->m_view, local);
+
+        // Determine a direction for picking raycast
+        XMVECTOR testPickingVector = farPoint - nearPoint;
+        testPickingVector = XMVector3Normalize(testPickingVector);
         
-        //for (int j = 0; j < m_displayList[i].)
+        // Iterate through all meshes on model, could have potential meshes. 
+        for (int j = 0; j < m_displayList[i].m_model->meshes.size(); j++)
+        {
+            BoundingBox& meshBounds = m_displayList[i].m_model->meshes[j]->boundingBox;
+            if (meshBounds.Intersects(nearPoint, testPickingVector, dist))
+            {
+                m_nearpoint = nearPoint;
+                m_farpoint = farPoint;
+                m_pickingDir = testPickingVector;
+
+                m_DisplayRaycast = true;
+
+                m_SelectedObjectID = i;
+                return true;
+            }
+        }
     }
 
+    m_DisplayRaycast = false;
+    //m_DisplayRaycast = true;
+
+    m_SelectedObjectID = -1;
     return false;
 }
 
@@ -444,7 +575,7 @@ void Game::BuildDisplayChunk(ChunkObject * SceneChunk)
 	//which, to be honest, is almost all of it. Its mostly rendering related info so...
 	m_displayChunk.PopulateChunkData(SceneChunk);		//migrate chunk data
 	m_displayChunk.LoadHeightMap(m_deviceResources);
-	m_displayChunk.m_terrainEffect->SetProjection(m_projection);
+	m_displayChunk.m_terrainEffect->SetProjection(m_Camera->m_projection);
 	m_displayChunk.InitialiseBatch();
 }
 
@@ -506,6 +637,10 @@ void Game::CreateDeviceDependentResources()
 
     m_font2 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
 
+    m_font3 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
+
+    m_font4 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
+
 //    m_shape = GeometricPrimitive::CreateTeapot(context, 4.f, 8);
 
     // SDKMESH has to use clockwise winding with right-handed coordinates, so textures are flipped in U
@@ -538,12 +673,7 @@ void Game::CreateWindowSizeDependentResources()
     }
 
     // This sample makes use of a right-handed coordinate system using row-major matrices.
-    m_Camera->UpdateProjectionView(aspectRatio, fovAngleY); = Matrix::CreatePerspectiveFieldOfView(
-        fovAngleY,
-        aspectRatio,
-        0.01f,
-        1000.0f
-    );
+    m_Camera->UpdateProjectionView(aspectRatio, fovAngleY);
 
     m_batchEffect->SetProjection(m_Camera->m_projection);
 

@@ -321,7 +321,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_MOUSEMOVE:
-		m_toolInputCommands.MousePos = DirectX::SimpleMath::Vector2(msg->pt.x, msg->pt.y);
+		m_toolInputCommands.MousePos = DirectX::SimpleMath::Vector2(GET_X_LPARAM(msg->lParam), GET_Y_LPARAM(msg->lParam));
 		break;
 
 	case WM_LBUTTONUP:

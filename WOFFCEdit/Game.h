@@ -93,6 +93,9 @@ private:
 	// Window
 	RECT m_WindowRect;
 
+	// ID
+	int m_SelectedObjectID = 0;
+
     // DirectXTK objects.
     std::unique_ptr<DirectX::CommonStates>                                  m_states;
     std::unique_ptr<DirectX::BasicEffect>                                   m_batchEffect;
@@ -103,6 +106,8 @@ private:
     std::unique_ptr<DirectX::SpriteBatch>                                   m_sprites;
     std::unique_ptr<DirectX::SpriteFont>                                    m_font;
 	std::unique_ptr<DirectX::SpriteFont>                                    m_font2;
+	std::unique_ptr<DirectX::SpriteFont>                                    m_font3;
+	std::unique_ptr<DirectX::SpriteFont>                                    m_font4;
 
 #ifdef DXTK_AUDIO
     std::unique_ptr<DirectX::AudioEngine>                                   m_audEngine;
@@ -124,6 +129,12 @@ private:
 #endif
 
     DirectX::SimpleMath::Matrix                                             m_world;
+
+	// Debug
+	bool m_DisplayRaycast = false;
+	DirectX::XMVECTOR m_nearpoint;
+	DirectX::XMVECTOR m_pickingDir;
+	DirectX::XMVECTOR m_farpoint;
 };
 
 std::wstring StringToWCHART(std::string s);

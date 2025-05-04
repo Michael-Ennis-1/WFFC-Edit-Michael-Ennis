@@ -7,7 +7,7 @@ Camera::Camera()
 {
 	m_movespeed = 3.0f;
 	m_camRotRate = 1.0;
-	m_camRotSensitivity = 1.0f;
+	m_camRotSensitivity = 0.5f;
 
 	m_camPosition.x = 0.0f;
 	m_camPosition.y = 3.7f;
