@@ -116,20 +116,38 @@ void Game::Tick(InputCommands *Input)
 void Game::Update(DX::StepTimer const& timer)
 {
     // Pass input commands to camera
-	m_Camera->Update(m_InputCommands, timer.GetElapsedSeconds());
+    m_Camera->Update(m_InputCommands, timer.GetElapsedSeconds());
+
+    // Determine if mouse hovering over object
+    ObjectPickingUpdate();
 
     if (m_InputCommands.leftMouseDown)
     {
-        if (HasObjectBeenPicked())
+        if (!m_HasExecutedClickFunctionality)
         {
-            bool BreakpointCheck = true;
+            if (m_IsHovering)
+            {
+                // Select the hovered object
+                m_SelectedObjectID = m_HoveredObjectID;
+                m_HasSelected = true;
+            }
+            else
+            {
+                // Clicking elsewhere in the world not on an object will remove selection 
+                m_SelectedObjectID = -1;
+                m_HasSelected = false;
+            }
+
+            // Prevents more than one click event triggering over frames
+            m_HasExecutedClickFunctionality = true;
         }
     }
-
-    if (HasObjectBeenPicked())
+    else if (!m_InputCommands.leftMouseDown && m_HasExecutedClickFunctionality)
     {
-        bool BreakpointCheck = true;
+        // Reset mouse functionality for next click
+        m_HasExecutedClickFunctionality = false;
     }
+
 
     m_batchEffect->SetView(m_Camera->m_view);
     m_batchEffect->SetWorld(Matrix::Identity);
@@ -188,67 +206,15 @@ void Game::Render()
     }
 
     //bool TestRaytrace = true;
-    if (m_DisplayRaycast)
+    if (m_IsHovering)
     {
-        m_deviceResources->PIXBeginEvent(L"Draw grid");
-
-        auto context = m_deviceResources->GetD3DDeviceContext();
-        context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
-        context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
-        context->RSSetState(m_states->CullCounterClockwise());
-
-        m_batchEffect->Apply(context);
-
-        context->IASetInputLayout(m_batchInputLayout.Get());
-
-        m_batch->Begin();
-
-        /*m_batch->DrawLine(VertexPositionColor(m_nearpoint, Colors::Red),
-            VertexPositionColor(m_nearpoint + m_pickingDir, Colors::Red));*/
-        m_batch->DrawLine(VertexPositionColor(m_nearpoint, Colors::Red),
-            VertexPositionColor(m_farpoint, Colors::Red));
-
-        XMFLOAT3 corners[8];
-        m_displayList[m_SelectedObjectID].m_model->meshes[0]->boundingBox.GetCorners(corners); // Get 8 corners of the box
-
-        // Transform each corner by the object's world matrix
-        for (int i = 0; i < 8; ++i)
-        {
-            XMStoreFloat3(&corners[i], XMVector3Transform(XMLoadFloat3(&corners[i]), m_displayList[m_SelectedObjectID].GetObjectMatrix()));
-        }
-
-        // Define the 12 lines (edges) of a bounding box
-        const int edgeIndices[24] =
-        {
-            0, 1, 1, 2, 2, 3, 3, 0, // bottom face
-            4, 5, 5, 6, 6, 7, 7, 4, // top face
-            0, 4, 1, 5, 2, 6, 3, 7  // vertical edges
-        };
-
-        for (int i = 0; i < 24; i += 2)
-        {
-           m_batch->DrawLine(
-                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i]]), Colors::Red),
-                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i + 1]]), Colors::Red));
-        }
-
-        // Transform each corner by the object's world matrix
-        for (int i = 0; i < 8; ++i)
-        {
-            XMStoreFloat3(&corners[i], XMVector3Transform(XMLoadFloat3(&corners[i]), XMMatrixIdentity()));
-        }
-
-        for (int i = 0; i < 24; i += 2)
-        {
-            m_batch->DrawLine(
-                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i]]), Colors::Red),
-                VertexPositionColor(XMLoadFloat3(&corners[edgeIndices[i + 1]]), Colors::Red));
-        }
-
-        m_batch->End();
-
-        m_deviceResources->PIXEndEvent();
+        DrawCubeForDisplayObject(m_HoveredObjectID);
     }
+    if (m_HasSelected)
+    {
+        DrawCubeForDisplayObject(m_SelectedObjectID, FXMVECTOR{ 0, 1, 0, 1 });
+    }
+
     //CAMERA POSITION ON HUD
     m_sprites->Begin();
     WCHAR   Buffer[256];
@@ -260,20 +226,8 @@ void Game::Render()
     m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Green);
 
     WCHAR Buffer3[256];
-    std::wstring var3 = L"Obj Selected: " + std::to_wstring(m_SelectedObjectID);
+    std::wstring var3 = L"Obj Hovered: " + std::to_wstring(m_HoveredObjectID);
     m_font3->DrawString(m_sprites.get(), var3.c_str(), XMFLOAT2(100, 50), Colors::Red);
-
-    WCHAR Buffer4[256];
-    std::wstring var4 = L"Near Point X: " + std::to_wstring(XMVectorGetX(m_nearpoint))
-        + L"Near Point Y: " + std::to_wstring(XMVectorGetY(m_nearpoint))
-        + L"Near Point Z: " + std::to_wstring(XMVectorGetZ(m_nearpoint));
-    m_font4->DrawString(m_sprites.get(), var4.c_str(), XMFLOAT2(100, 70), Colors::Green);
-
-    //WCHAR Buffer5[256];
-    //std::wstring var5 = L"Near Point X: " + std::to_wstring(XMVectorGetX(m_farpoint))
-    //    + L"Near Point Y: " + std::to_wstring(XMVectorGetY(m_farpoint))
-    //    + L"Near Point Z: " + std::to_wstring(XMVectorGetZ(m_farpoint));
-    //m_font5->DrawString(m_sprites.get(), var5.c_str(), XMFLOAT2(100, 90), Colors::Green);
 
 	m_sprites->End();
 
@@ -331,78 +285,52 @@ void Game::Clear()
     m_deviceResources->PIXEndEvent();
 }
 
-bool Game::HasObjectBeenPicked()
+void Game::ObjectPickingUpdate()
 {
-    //float MouseYFlipped = m_WindowRect.bottom - m_InputCommands.MousePos.y;
-
     // Caches the mouse position in near and far plane
     XMVECTOR mouseNearPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 0, 1);
     Vector3 mouseFarPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f, 1);
 
-    float closestDistance = FLT_MAX;
-
     // Cache viewport for projection of mouse coords to world
     D3D11_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 
+    //float closestDistance = FLT_MAX;
     float dist = 0;
    
-    // Iterate through all objects within the world to determine if we picked object
+    // Iterate through all objects within the world to determine if we are hovering over an object
     for (int i = 0; i < m_displayList.size(); i++)
     {
-        //Get the scale factor and translation of the object
-        const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
-        const XMVECTORF32 translate = {
-            m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z
-        };
 
-        //convert euler angles into a quaternion for the rotation of the object
-        XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(m_displayList[i].m_orientation.y * 3.1415 / 180,
-            m_displayList[i].m_orientation.x * 3.1415 / 180,
-            m_displayList[i].m_orientation.z * 3.1415 / 180);
+        // Create local object matrix based on its translation, scale and rotation and multiply by world matrix
+        XMMATRIX objectMatrix = m_world * m_displayList[i].GetObjectMatrix();
 
-        //create set the matrix of the selected object in the world based on the translation, scale and rotation.
-        XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate,
-            translate);
+        // Unproject mouse coords from screen space to world space
+        XMVECTOR nearPoint = XMVector3Unproject(mouseNearPlane, 0.0f, 0.0f, m_WindowRect.right, m_WindowRect.bottom, 
+            viewport.MinDepth, viewport.MaxDepth, m_Camera->m_projection,m_Camera->m_view, objectMatrix);
 
-        //Unproject the points on the near and far plane, with respect to the matrix we just created.
-        XMVECTOR nearPoint = XMVector3Unproject(mouseNearPlane, 0.0f, 0.0f, m_WindowRect.right,
-            m_WindowRect.bottom,
-            m_deviceResources->GetScreenViewport().MinDepth,
-            m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection,
-            m_Camera->m_view, local);
-        XMVECTOR farPoint = XMVector3Unproject(mouseFarPlane, 0.0f, 0.0f, m_WindowRect.right,
-            m_WindowRect.bottom,
-            m_deviceResources->GetScreenViewport().MinDepth,
-            m_deviceResources->GetScreenViewport().MaxDepth, m_Camera->m_projection,
-            m_Camera->m_view, local);
+        XMVECTOR farPoint = XMVector3Unproject(mouseFarPlane, 0.0f, 0.0f, m_WindowRect.right, m_WindowRect.bottom,
+            viewport.MinDepth, viewport.MaxDepth, m_Camera->m_projection, m_Camera->m_view, objectMatrix);
 
         // Determine a direction for picking raycast
-        XMVECTOR testPickingVector = farPoint - nearPoint;
-        testPickingVector = XMVector3Normalize(testPickingVector);
+        XMVECTOR pickingVector = farPoint - nearPoint;
+        pickingVector = XMVector3Normalize(pickingVector);
         
         // Iterate through all meshes on model, could have potential meshes. 
         for (int j = 0; j < m_displayList[i].m_model->meshes.size(); j++)
         {
             BoundingBox& meshBounds = m_displayList[i].m_model->meshes[j]->boundingBox;
-            if (meshBounds.Intersects(nearPoint, testPickingVector, dist))
+            if (meshBounds.Intersects(nearPoint, pickingVector, dist))
             {
-                m_nearpoint = nearPoint;
-                m_farpoint = farPoint;
-                m_pickingDir = testPickingVector;
+                m_IsHovering = true;
+                m_HoveredObjectID = i;
 
-                m_DisplayRaycast = true;
-
-                m_SelectedObjectID = i;
-                return true;
+                return;
             }
         }
     }
 
-    m_DisplayRaycast = false;
-    //m_DisplayRaycast = true;
-
-    m_SelectedObjectID = -1;
-    return false;
+    m_IsHovering = false;
+    m_HoveredObjectID = -1;
 }
 
 void XM_CALLCONV Game::DrawGrid(FXMVECTOR xAxis, FXMVECTOR yAxis, FXMVECTOR origin, size_t xdivs, size_t ydivs, GXMVECTOR color)
@@ -449,6 +377,67 @@ void XM_CALLCONV Game::DrawGrid(FXMVECTOR xAxis, FXMVECTOR yAxis, FXMVECTOR orig
 
     m_batch->End();
 
+    m_deviceResources->PIXEndEvent();
+}
+void Game::DrawCubeForDisplayObject(int ObjectID, FXMVECTOR Colour)
+{
+    m_deviceResources->PIXBeginEvent(L"Draw cube");
+
+    auto context = m_deviceResources->GetD3DDeviceContext();
+    context->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+    context->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+    context->RSSetState(m_states->CullCounterClockwise());
+
+    m_batchEffect->Apply(context);
+    context->IASetInputLayout(m_batchInputLayout.Get());
+
+    m_batch->Begin();
+
+    // Store bounding box corners within array
+    XMFLOAT3 boxCorners[8];
+    m_displayList[ObjectID].m_model->meshes[0]->boundingBox.GetCorners(boxCorners);
+
+    // Transform each corner by the object's world matrix
+    for (int i = 0; i < 8; ++i)
+    {
+        XMStoreFloat3(&boxCorners[i], XMVector3Transform(   XMVECTOR{ boxCorners[i].x, boxCorners[i].y, boxCorners[i].z }, 
+                                                            m_displayList[ObjectID].GetObjectMatrix()));
+    }
+
+    // Store indices of bounding box 
+    const int edgeIndices[24] =
+    {
+        0, 1, 1, 2, 
+        2, 3, 3, 0, 
+
+        4, 5, 5, 6, 
+        6, 7, 7, 4, 
+
+        0, 4, 1, 5, 
+        2, 6, 3, 7  
+    };
+
+    // Loop through all indices and draw bounding box lines
+    for (int i = 0; i < 24; i ++)
+    {
+        m_batch->DrawLine(
+            VertexPositionColor(FXMVECTOR{ 
+                boxCorners[edgeIndices[i]].x,
+                boxCorners[edgeIndices[i]].y,
+                boxCorners[edgeIndices[i]].z }, 
+                Colour),
+
+            VertexPositionColor(FXMVECTOR{ 
+                boxCorners[edgeIndices[i + 1]].x,
+                boxCorners[edgeIndices[i + 1]].y,
+                boxCorners[edgeIndices[i + 1]].z }, 
+                Colour));
+
+        // Since we draw a line using two indices, need to increment by an extra indice before continuing
+        i++;
+    }
+
+    m_batch->End();
     m_deviceResources->PIXEndEvent();
 }
 #pragma endregion

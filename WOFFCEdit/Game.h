@@ -64,10 +64,13 @@ private:
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
 
-	// Check if object has been picked - CUSTOM
-	bool HasObjectBeenPicked();
+	// Check if object has been picked
+	void ObjectPickingUpdate();
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
+
+	// Draw debug cube for selecting an object
+	void DrawCubeForDisplayObject(int ObjectID, DirectX::FXMVECTOR Colour = { 1, 0, 0, 1 });
 
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
@@ -93,8 +96,14 @@ private:
 	// Window
 	RECT m_WindowRect;
 
-	// ID
-	int m_SelectedObjectID = 0;
+	// Object ID
+	int m_SelectedObjectID = -1;
+	int m_HoveredObjectID = -1;
+
+	// Mouse picking and object selection
+	bool m_IsHovering = false;
+	bool m_HasSelected = false;
+	bool m_HasExecutedClickFunctionality = false;
 
     // DirectXTK objects.
     std::unique_ptr<DirectX::CommonStates>                                  m_states;
@@ -129,12 +138,6 @@ private:
 #endif
 
     DirectX::SimpleMath::Matrix                                             m_world;
-
-	// Debug
-	bool m_DisplayRaycast = false;
-	DirectX::XMVECTOR m_nearpoint;
-	DirectX::XMVECTOR m_pickingDir;
-	DirectX::XMVECTOR m_farpoint;
 };
 
 std::wstring StringToWCHART(std::string s);
