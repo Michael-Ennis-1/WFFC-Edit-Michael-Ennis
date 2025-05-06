@@ -58,8 +58,11 @@ void SelectDialogue::DoDataExchange(CDataExchange* pDX)
 void SelectDialogue::End()
 {
 	int index = m_listBox.GetCurSel();
-	m_ToolMain->m_d3dRenderer.m_SelectedObjectID = index;
-	m_ToolMain->m_d3dRenderer.m_HasSelected = true;
+	if (index != -1)
+	{
+		m_ToolMain->m_d3dRenderer.m_SelectedObjectID = index;
+		m_ToolMain->m_d3dRenderer.m_HasSelected = true;
+	}
 
 	DestroyWindow();	//destory the window properly.  INcluding the links and pointers created.  THis is so the dialogue can start again. 
 }
@@ -67,8 +70,11 @@ void SelectDialogue::End()
 void SelectDialogue::Select()
 {
 	int index = m_listBox.GetCurSel();
-	m_ToolMain->m_d3dRenderer.m_SelectedObjectID = index;
-	m_ToolMain->m_d3dRenderer.m_HasSelected = true;
+	if (index != -1)
+	{
+		m_ToolMain->m_d3dRenderer.m_SelectedObjectID = index;
+		m_ToolMain->m_d3dRenderer.m_HasSelected = true;
+	}
 }
 
 void SelectDialogue::OnCancel()
