@@ -354,6 +354,8 @@ void Game::ObjectPickingUpdate()
                 m_IsHovering = true;
                 collisionOccured = true;
 
+                // This ensures only the closest object is selected as the hovered ID, otherwise objects behind this one with a lower
+                // ID will be selected over the closest one.
                 if (dist < closestDistance)
                 {
                     m_HoveredObjectID = i;
