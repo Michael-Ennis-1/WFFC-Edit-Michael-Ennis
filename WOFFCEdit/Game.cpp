@@ -250,15 +250,15 @@ void Game::Render()
     }
 
     //CAMERA POSITION ON HUD
-    m_sprites->Begin();
-    WCHAR   Buffer[256];
-    std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Y: " + std::to_wstring(m_Camera->m_camPosition.y) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
-    m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Green);
+ //   m_sprites->Begin();
+ //   WCHAR   Buffer[256];
+ //   std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Y: " + std::to_wstring(m_Camera->m_camPosition.y) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
+ //   m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Green);
 
-    WCHAR Buffer2[256];
-    std::wstring var2 = L"Cam Pitch: " + std::to_wstring(m_Camera->m_camOrientation.z) + L"Cam Yaw: " + std::to_wstring(m_Camera->m_camOrientation.y);
-    m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Red);
-	m_sprites->End();
+ //   WCHAR Buffer2[256];
+ //   std::wstring var2 = L"Cam Pitch: " + std::to_wstring(m_Camera->m_camOrientation.z) + L"Cam Yaw: " + std::to_wstring(m_Camera->m_camOrientation.y);
+ //   m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Red);
+	//m_sprites->End();
 
 	//RENDER OBJECTS FROM SCENEGRAPH
 	int numRenderObjects = m_displayList.size();
@@ -647,7 +647,7 @@ void Game::DeleteSelectedDisplayObject()
     {
         m_displayList.erase(m_displayList.begin() + m_SelectedObjectID);
 
-        // Clear freed memory so that new ID's are not generated for non existing objects
+        // Clear freed memory
         m_displayList.shrink_to_fit();
 
         // Reset ID's for remaining objects

@@ -4,8 +4,6 @@ E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(264,45): warning C426
 E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(274,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(273,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(272,97): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(258,11): warning C4101: 'Buffer2': unreferenced local variable
-E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(254,13): warning C4101: 'Buffer': unreferenced local variable
 E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(339,109): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
 E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(339,89): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
 E:\GithubClones\WFFC-Edit-Michael-Ennis\WOFFCEdit\Game.cpp(342,107): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
