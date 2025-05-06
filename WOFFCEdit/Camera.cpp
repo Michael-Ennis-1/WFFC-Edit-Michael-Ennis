@@ -81,7 +81,7 @@ void Camera::Update(InputCommands inputCommands, float deltaTime)
 	// y = rsinΦ
 	// z = rSinΘCosΦ
 
-	// Create look direction from Euler angles in m_camOrientation
+	// Create look direction from Polar and Azimuthal angles in m_camOrientation
 	m_camLookDirection.x = cos(yawRadians) * cos(pitchRadians);
 	m_camLookDirection.y = sin(pitchRadians);
 	m_camLookDirection.z = sin(yawRadians) * cos(pitchRadians);
@@ -89,6 +89,7 @@ void Camera::Update(InputCommands inputCommands, float deltaTime)
 	// Create right vector from look Direction
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
+	// Increase or decrease move speed based on keys pressed
 	float movespeed = m_movespeed;
 	if (inputCommands.shift)
 	{

@@ -252,12 +252,11 @@ void Game::Render()
     m_sprites->Begin();
     WCHAR   Buffer[256];
     std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Y: " + std::to_wstring(m_Camera->m_camPosition.y) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
-    m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Yellow);
+    m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Green);
 
     WCHAR Buffer2[256];
     std::wstring var2 = L"Cam Pitch: " + std::to_wstring(m_Camera->m_camOrientation.z) + L"Cam Yaw: " + std::to_wstring(m_Camera->m_camOrientation.y);
-    m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Green);
-
+    m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Red);
 	m_sprites->End();
 
 	//RENDER OBJECTS FROM SCENEGRAPH
@@ -321,7 +320,7 @@ void Game::ObjectPickingUpdate()
 
     // Caches the mouse position in near and far plane
     XMVECTOR mouseNearPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 0, 1);
-    Vector3 mouseFarPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f, 1);
+    XMVECTOR mouseFarPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f, 1);
 
     // Cache viewport for projection of mouse coords to world
     D3D11_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
@@ -332,7 +331,6 @@ void Game::ObjectPickingUpdate()
     // Iterate through all objects within the world to determine if we are hovering over an object
     for (int i = 0; i < m_displayList.size(); i++)
     {
-
         // Create local object matrix based on its translation, scale and rotation and multiply by world matrix
         XMMATRIX objectMatrix = m_world * m_displayList[i].GetObjectMatrix();
 
@@ -457,7 +455,7 @@ void Game::DrawCubeForDisplayObject(int ObjectID, FXMVECTOR Colour)
     };
 
     // Loop through all indices and draw bounding box lines
-    for (int i = 0; i < 24; i ++)
+    for (int i = 0; i < 24; i++)
     {
         m_batch->DrawLine(
             VertexPositionColor(FXMVECTOR{ 
@@ -529,7 +527,7 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 	int numObjects = SceneGraph->size();
 	for (int i = 0; i < numObjects; i++)
 	{
-		
+
 		//create a temp display object that we will populate then append to the display list.
 		DisplayObject newDisplayObject;
 		
