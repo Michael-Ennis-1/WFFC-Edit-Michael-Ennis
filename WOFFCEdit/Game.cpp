@@ -178,6 +178,7 @@ void Game::Update(DX::StepTimer const& timer)
     }
     else if (!m_InputCommands.focusOnObject && m_HasFocused)
     {
+        // Reset HasFocused variable when F key is up, so user can focus again
         m_HasFocused = false;
     }
 
