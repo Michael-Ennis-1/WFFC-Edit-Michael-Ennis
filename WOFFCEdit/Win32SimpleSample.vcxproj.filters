@@ -61,6 +61,8 @@
     </ClCompile>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CObjectOptions.cpp" />
+    <ClCompile Include="CCameraOptions.cpp" />
+    <ClCompile Include="CObjectSpawnOptions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -112,6 +114,8 @@
     </ClInclude>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CObjectOptions.h" />
+    <ClInclude Include="CCameraOptions.h" />
+    <ClInclude Include="CObjectSpawnOptions.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -39,7 +39,7 @@ Game::~Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
-	m_Camera = std::make_unique<Camera>();
+	m_Camera = std::make_shared<Camera>();
 
     m_gamePad = std::make_unique<GamePad>();
 
@@ -129,14 +129,16 @@ void Game::Update(DX::StepTimer const& timer)
             {
                 // Select the hovered object
                 m_SelectedObjectID = m_HoveredObjectID;
-                //objectDLG.DoModal();
                 m_HasSelected = true;
             }
             else
             {
-                // Clicking elsewhere in the world not on an object will remove selection 
-                m_SelectedObjectID = -1;
-                m_HasSelected = false;
+                // Clicking elsewhere in the world will remove selection so long as object property window is closed
+                if (!m_ObjectPropertiesOpen)
+                {
+                    m_SelectedObjectID = -1;
+                    m_HasSelected = false;
+                }
             }
 
             // Prevents more than one click event triggering over frames
@@ -147,6 +149,36 @@ void Game::Update(DX::StepTimer const& timer)
     {
         // Reset mouse functionality for next click
         m_HasExecutedClickFunctionality = false;
+    }
+
+    // Focus camera on object, prioritizing hovered over selected
+    if (m_InputCommands.focusOnObject && !m_HasFocused)
+    {
+        if (m_HoveredObjectID != -1)
+        {
+            m_Camera->m_camPosition = m_displayList[m_HoveredObjectID].m_position;
+
+            m_Camera->m_camPosition.y += 5;
+            m_Camera->m_camPosition.x += 5;
+
+            m_Camera->m_camOrientation = DirectX::SimpleMath::Vector3(0, 180, -35);
+        }
+        else if (m_SelectedObjectID != -1)
+        {
+            m_Camera->m_camPosition = m_displayList[m_SelectedObjectID].m_position;
+
+            // Repeat logic deliberately as function keeps getting entered even though hover + selected id both equal -1
+            m_Camera->m_camPosition.y += 5;
+            m_Camera->m_camPosition.x += 5;
+
+            m_Camera->m_camOrientation = DirectX::SimpleMath::Vector3(0, 180, -35);
+        }
+
+        m_HasFocused = true;
+    }
+    else if (!m_InputCommands.focusOnObject && m_HasFocused)
+    {
+        m_HasFocused = false;
     }
 
 
@@ -219,16 +251,12 @@ void Game::Render()
     //CAMERA POSITION ON HUD
     m_sprites->Begin();
     WCHAR   Buffer[256];
-    std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
+    std::wstring var = L"Cam X: " + std::to_wstring(m_Camera->m_camPosition.x) + L"Cam Y: " + std::to_wstring(m_Camera->m_camPosition.y) + L"Cam Z: " + std::to_wstring(m_Camera->m_camPosition.z);
     m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Yellow);
 
     WCHAR Buffer2[256];
     std::wstring var2 = L"Cam Pitch: " + std::to_wstring(m_Camera->m_camOrientation.z) + L"Cam Yaw: " + std::to_wstring(m_Camera->m_camOrientation.y);
     m_font2->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 30), Colors::Green);
-
-    WCHAR Buffer3[256];
-    std::wstring var3 = L"Obj Hovered: " + std::to_wstring(m_HoveredObjectID);
-    m_font3->DrawString(m_sprites.get(), var3.c_str(), XMFLOAT2(100, 50), Colors::Red);
 
 	m_sprites->End();
 
@@ -288,6 +316,9 @@ void Game::Clear()
 
 void Game::ObjectPickingUpdate()
 {
+    // Used to prevent reset of m_IsHovering and m_HoveredObjectID if object collides with ray
+    bool collisionOccured = false;
+
     // Caches the mouse position in near and far plane
     XMVECTOR mouseNearPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 0, 1);
     Vector3 mouseFarPlane = XMVectorSet(m_InputCommands.MousePos.x, m_InputCommands.MousePos.y, 1.f, 1);
@@ -295,7 +326,7 @@ void Game::ObjectPickingUpdate()
     // Cache viewport for projection of mouse coords to world
     D3D11_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 
-    //float closestDistance = FLT_MAX;
+    float closestDistance = 100000.0f;
     float dist = 0;
    
     // Iterate through all objects within the world to determine if we are hovering over an object
@@ -323,15 +354,22 @@ void Game::ObjectPickingUpdate()
             if (meshBounds.Intersects(nearPoint, pickingVector, dist))
             {
                 m_IsHovering = true;
-                m_HoveredObjectID = i;
+                collisionOccured = true;
 
-                return;
+                if (dist < closestDistance)
+                {
+                    m_HoveredObjectID = i;
+                    closestDistance = dist;
+                }
             }
         }
     }
 
-    m_IsHovering = false;
-    m_HoveredObjectID = -1;
+    if (!collisionOccured)
+    {
+        m_IsHovering = false;
+        m_HoveredObjectID = -1;
+    }
 }
 
 void XM_CALLCONV Game::DrawGrid(FXMVECTOR xAxis, FXMVECTOR yAxis, FXMVECTOR origin, size_t xdivs, size_t ydivs, GXMVECTOR color)
@@ -574,19 +612,53 @@ void Game::SaveDisplayChunk(ChunkObject * SceneChunk)
 	m_displayChunk.SaveHeightMap();			//save heightmap to file.
 }
 
-std::vector<DisplayObject> Game::GetDisplayList()
+void Game::SpawnNewDisplayObject(DisplayObject newObject)
 {
-    return m_displayList;
+    // Set model to same as first model in vector, as well as initializing texture
+    newObject.m_model = m_displayList[0].m_model;
+    DirectX::CreateDDSTextureFromFile(m_deviceResources->GetD3DDevice(), L"database/data/placeholder.dds", nullptr, &newObject.m_texture_diffuse);
+
+    // Update effects 
+    newObject.m_model->UpdateEffects([&](DirectX::IEffect* effect)
+    {
+        auto lights = dynamic_cast<DirectX::BasicEffect*>(effect);
+        if (lights)
+        {
+           lights->SetTexture(newObject.m_texture_diffuse);
+        }
+    });
+
+    // Apply texture diffuse based on other object
+    newObject.m_texture_diffuse = m_displayList[0].m_texture_diffuse;
+
+    // Reset ID's for all objects
+    m_displayList.push_back(newObject);
+    for (int i = 0; i < m_displayList.size(); i++)
+    {
+        m_displayList[i].m_ID = i;
+    }
 }
 
-DisplayObject Game::GetDisplayObject(int ID)
+void Game::DeleteSelectedDisplayObject()
 {
-    return m_displayList[ID];
-}
+    // Erase selected object
+    if (m_SelectedObjectID != -1)
+    {
+        m_displayList.erase(m_displayList.begin() + m_SelectedObjectID);
 
-void Game::EditDisplayObject(DisplayObject NewSettings, int ID)
-{
-    m_displayList[ID] = NewSettings;
+        // Clear freed memory so that new ID's are not generated for non existing objects
+        m_displayList.shrink_to_fit();
+
+        // Reset ID's for remaining objects
+        for (int i = 0; i < m_displayList.size(); i++)
+        {
+            m_displayList[i].m_ID = i;
+        }
+    }
+
+    // Reset selected object after deletion
+    m_SelectedObjectID = -1;
+    m_HasSelected = false;
 }
 
 #ifdef DXTK_AUDIO
@@ -641,10 +713,6 @@ void Game::CreateDeviceDependentResources()
     m_font = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
 
     m_font2 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
-
-    m_font3 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
-
-    m_font4 = std::make_unique<SpriteFont>(device, L"SegoeUI_18.spritefont");
 
 //    m_shape = GeometricPrimitive::CreateTeapot(context, 4.f, 8);
 

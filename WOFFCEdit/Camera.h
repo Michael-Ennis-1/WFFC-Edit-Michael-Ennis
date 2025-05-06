@@ -37,4 +37,6 @@ public:
 
 	// Used to control camera move speed
 	float m_movespeed;
+	float m_sprintspeed;
+	float m_slowspeed;
 };

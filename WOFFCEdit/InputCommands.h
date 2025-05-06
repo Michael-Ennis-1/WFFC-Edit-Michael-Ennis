@@ -8,6 +8,9 @@ struct InputCommands
 	bool left;
 	bool rotRight;
 	bool rotLeft;
+	bool shift;
+	bool ctrl;
+	bool focusOnObject;
 
 	bool rightMouseDown;
 	bool leftMouseDown;

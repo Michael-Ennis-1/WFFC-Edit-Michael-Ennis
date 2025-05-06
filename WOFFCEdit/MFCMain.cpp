@@ -1,5 +1,6 @@
 #include "MFCMain.h"
 #include "resource.h"
+#include <Effects.h>
 
 
 BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
@@ -7,6 +8,8 @@ BEGIN_MESSAGE_MAP(MFCMain, CWinApp)
 	ON_COMMAND(ID_FILE_SAVETERRAIN, &MFCMain::MenuFileSaveTerrain)
 	ON_COMMAND(ID_EDIT_SELECT, &MFCMain::MenuEditSelect)
 	ON_COMMAND(ID_EDIT_OBJECTPROPERTIES, &MFCMain::MenuEditObjectProperties)
+	ON_COMMAND(ID_EDIT_CAMERAPROPERTIES, &MFCMain::MenuEditCameraProperties)
+	ON_COMMAND(ID_EDIT_SPAWNPROPERTIES, &MFCMain::MenuEditSpawnProperties)
 	ON_COMMAND(ID_BUTTON40001,	&MFCMain::ToolBarButton1)
 	ON_UPDATE_COMMAND_UI(ID_INDICATOR_TOOL, &CMyFrame::OnUpdatePage)
 END_MESSAGE_MAP()
@@ -74,6 +77,28 @@ int MFCMain::Run()
 			std::wstring statusString = L"Selected Object: " + std::to_wstring(ID);
 			m_ToolSystem.Tick(&msg);
 
+			// Update MFC object properties window if ID changes to another object; otherwise, keep it selected on an object regardless
+			if (m_ObjectProperties)
+			{
+				if (ID != m_ObjectProperties.m_SelectedID && ID > -1)
+				{
+					Game& d3dRenderer = m_ToolSystem.m_d3dRenderer;
+					DisplayObject* selectedObject = &d3dRenderer.m_displayList[ID];
+
+					m_ObjectProperties.m_SelectedID = ID;
+					m_ObjectProperties.UpdateProperties(selectedObject, &m_ToolSystem);
+				}
+			}
+			else
+			{
+				// If object properties window closed, stop highlighting object
+				Game& d3dRenderer = m_ToolSystem.m_d3dRenderer;
+				if (d3dRenderer.m_ObjectPropertiesOpen)
+				{
+					d3dRenderer.m_ObjectPropertiesOpen = false;
+				}
+			}
+
 			//send current object ID to status bar in The main frame
 			m_frame->m_wndStatusBar.SetPaneText(1, statusString.c_str(), 1);	
 		}
@@ -95,18 +120,14 @@ void MFCMain::MenuFileSaveTerrain()
 
 void MFCMain::MenuEditSelect()
 {
-	//SelectDialogue m_ToolSelectDialogue(NULL, &m_ToolSystem.m_sceneGraph);		//create our dialoguebox //modal constructor
-	//m_ToolSelectDialogue.DoModal();	// start it up modal
-
 	//modeless dialogue must be declared in the class.   If we do local it will go out of scope instantly and destroy itself
 	m_ToolSelectDialogue.Create(IDD_DIALOG1);	//Start up modeless
 	m_ToolSelectDialogue.ShowWindow(SW_SHOW);	//show modeless
-	m_ToolSelectDialogue.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject);
+	m_ToolSelectDialogue.SetObjectData(&m_ToolSystem.m_sceneGraph, &m_ToolSystem.m_selectedObject, &m_ToolSystem);
 }
 
 void MFCMain::ToolBarButton1()
 {
-	
 	m_ToolSystem.onActionSave();
 }
 
@@ -115,14 +136,35 @@ void MFCMain::MenuEditObjectProperties()
 	m_ObjectProperties.Create(IDD_DIALOG_OBJECT_OPTIONS);
 	m_ObjectProperties.ShowWindow(SW_SHOW);
 
-	// Proof of concept edit of specific variables for objects
-	// IF WE WANT TO MODIFY ORIGINAL OBJECTS, SEND THEM AS REFERENCES!
-	// THESE CREATE POINTERS THAT UPDATE ORIGINAL DATA, ALSO MAKE SURE TO CHECK
-	// "SelectDialogue.h" AS EXAMPLE IF STUCK. GOOD LUCK! GONNA NEED IT
-	DisplayObject test = m_ToolSystem.GetDisplayObject(0);
-	test.m_position.x = 30;
+	Game& d3dRenderer = m_ToolSystem.m_d3dRenderer;
 
-	m_ToolSystem.EditDisplayObject(test, 0);
+	// View selected object data in property window
+	int SelectedObjectID = m_ToolSystem.getCurrentSelectionID();
+	if (SelectedObjectID > -1)
+	{
+		DisplayObject* selectedObject = &d3dRenderer.m_displayList[SelectedObjectID];
+		m_ObjectProperties.UpdateProperties(selectedObject, &m_ToolSystem);
+	}
+
+	// Forces selection to remain when property window open
+	d3dRenderer.m_ObjectPropertiesOpen = true;
+}
+
+void MFCMain::MenuEditCameraProperties()
+{
+	m_CameraProperties.Create(IDD_DIALOG_CAMERA_OPTIONS);
+	m_CameraProperties.ShowWindow(SW_SHOW);
+
+	Game& d3dRenderer = m_ToolSystem.m_d3dRenderer;
+	m_CameraProperties.UpdateProperties(d3dRenderer.m_Camera.get());
+}
+
+void MFCMain::MenuEditSpawnProperties()
+{
+	m_SpawnProperties.Create(IDD_DIALOG_CREATION_OPTIONS);
+	m_SpawnProperties.ShowWindow(SW_SHOW);
+
+	m_SpawnProperties.UpdateProperties(&m_ToolSystem);
 }
 
 MFCMain::MFCMain()

@@ -166,8 +166,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CCameraOptions.cpp" />
     <ClCompile Include="ChunkObject.cpp" />
     <ClCompile Include="CObjectOptions.cpp" />
+    <ClCompile Include="CObjectSpawnOptions.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="DisplayChunk.cpp" />
     <ClCompile Include="DisplayObject.cpp" />
@@ -184,8 +186,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CCameraOptions.h" />
     <ClInclude Include="ChunkObject.h" />
     <ClInclude Include="CObjectOptions.h" />
+    <ClInclude Include="CObjectSpawnOptions.h" />
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DisplayChunk.h" />
     <ClInclude Include="DisplayObject.h" />

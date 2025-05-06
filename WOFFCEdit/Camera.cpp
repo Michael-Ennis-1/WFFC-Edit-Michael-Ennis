@@ -5,7 +5,10 @@ using namespace DirectX::SimpleMath;
 
 Camera::Camera()
 {
+	m_slowspeed = 1.0f;
 	m_movespeed = 3.0f;
+	m_sprintspeed = 9.0f;
+
 	m_camRotRate = 1.0;
 	m_camRotSensitivity = 0.5f;
 
@@ -86,22 +89,32 @@ void Camera::Update(InputCommands inputCommands, float deltaTime)
 	// Create right vector from look Direction
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
 
+	float movespeed = m_movespeed;
+	if (inputCommands.shift)
+	{
+		movespeed = m_sprintspeed;
+	}
+	else if (inputCommands.ctrl)
+	{
+		movespeed = m_slowspeed;
+	}
+
 	//  Move camera based on input, also limit it based on deltatime
 	if (inputCommands.forward)
 	{
-		m_camPosition += m_camLookDirection * m_movespeed * deltaTime;
+		m_camPosition += m_camLookDirection * movespeed * deltaTime;
 	}
 	if (inputCommands.back)
 	{
-		m_camPosition -= m_camLookDirection * m_movespeed * deltaTime;
+		m_camPosition -= m_camLookDirection * movespeed * deltaTime;
 	}
 	if (inputCommands.right)
 	{
-		m_camPosition += m_camRight * m_movespeed * deltaTime;
+		m_camPosition += m_camRight * movespeed * deltaTime;
 	}
 	if (inputCommands.left)
 	{
-		m_camPosition -= m_camRight * m_movespeed * deltaTime;
+		m_camPosition -= m_camRight * movespeed * deltaTime;
 	}
 
 	// Update lookat point for camera direction
@@ -116,11 +129,5 @@ void Camera::Update(InputCommands inputCommands, float deltaTime)
 
 void Camera::UpdateProjectionView(float aspectRatio, float fovAngleY)
 {
-	m_projection = Matrix::CreatePerspectiveFieldOfView(
-					fovAngleY,
-					aspectRatio,
-					0.01f,
-					1000.0f
-					);
-
+	m_projection = Matrix::CreatePerspectiveFieldOfView(fovAngleY, aspectRatio, 0.01f, 1000.0f);
 }

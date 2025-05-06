@@ -38,7 +38,6 @@ ToolMain::~ToolMain()
 
 int ToolMain::getCurrentSelectionID()
 {
-
 	return m_d3dRenderer.m_SelectedObjectID;
 }
 
@@ -333,7 +332,6 @@ void ToolMain::UpdateInput(MSG * msg)
 	case WM_LBUTTONDOWN:	
 		m_toolInputCommands.leftMouseDown = true;
 		break;
-
 	}
 
 	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
@@ -372,21 +370,27 @@ void ToolMain::UpdateInput(MSG * msg)
 	}
 	else m_toolInputCommands.rotLeft = false;
 
+	// Custom sprint key for camera
+	if (m_keyArray[VK_SHIFT])
+	{
+		m_toolInputCommands.shift = true;
+	}
+	else m_toolInputCommands.shift = false;
+
+	// Custom slow key for camera
+	if (m_keyArray[VK_CONTROL])
+	{
+		m_toolInputCommands.ctrl = true;
+	}
+	else m_toolInputCommands.ctrl = false;
+
+	// Custom F key for focusing on objects
+	if (m_keyArray['F'])
+	{
+		m_toolInputCommands.focusOnObject = true;
+	}
+	else m_toolInputCommands.focusOnObject = false;
+
 	//WASD
-}
-
-void ToolMain::EditDisplayObject(DisplayObject NewSettings, int ID)
-{
-	m_d3dRenderer.EditDisplayObject(NewSettings, ID);
-}
-
-DisplayObject ToolMain::GetDisplayObject(int ID)
-{
-	return m_d3dRenderer.GetDisplayList()[ID];
-}
-
-std::vector<DisplayObject> ToolMain::GetDisplayList()
-{
-	return m_d3dRenderer.GetDisplayList();
 }
 

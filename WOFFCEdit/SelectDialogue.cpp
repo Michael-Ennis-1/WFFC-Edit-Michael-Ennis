@@ -32,17 +32,18 @@ SelectDialogue::~SelectDialogue()
 }
 
 ///pass through pointers to the data in the tool we want to manipulate
-void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, int * selection)
+void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, int * selection, ToolMain* toolMain)
 {
 	m_sceneGraph = SceneGraph;
 	m_currentSelection = selection;
+	m_ToolMain = toolMain;
 
 	//roll through all the objects in the scene graph and put an entry for each in the listbox
 	int numSceneObjects = m_sceneGraph->size();
 	for (int i = 0; i < numSceneObjects; i++)
 	{
 		//easily possible to make the data string presented more complex. showing other columns.
-		std::wstring listBoxEntry = std::to_wstring(m_sceneGraph->at(i).ID);
+		std::wstring listBoxEntry = std::to_wstring(m_sceneGraph->at(i).ID -1);
 		m_listBox.AddString(listBoxEntry.c_str());
 	}
 }
@@ -56,18 +57,18 @@ void SelectDialogue::DoDataExchange(CDataExchange* pDX)
 
 void SelectDialogue::End()
 {
+	int index = m_listBox.GetCurSel();
+	m_ToolMain->m_d3dRenderer.m_SelectedObjectID = index;
+	m_ToolMain->m_d3dRenderer.m_HasSelected = true;
+
 	DestroyWindow();	//destory the window properly.  INcluding the links and pointers created.  THis is so the dialogue can start again. 
 }
 
 void SelectDialogue::Select()
 {
 	int index = m_listBox.GetCurSel();
-	CString currentSelectionValue;
-	
-	m_listBox.GetText(index, currentSelectionValue);
-
-	*m_currentSelection = _ttoi(currentSelectionValue);
-
+	m_ToolMain->m_d3dRenderer.m_SelectedObjectID = index;
+	m_ToolMain->m_d3dRenderer.m_HasSelected = true;
 }
 
 void SelectDialogue::OnCancel()

@@ -10,6 +10,8 @@
 #include "MFCFrame.h"
 #include "SelectDialogue.h"
 #include "CObjectOptions.h"
+#include "CCameraOptions.h"
+#include "CObjectSpawnOptions.h"
 
 
 class MFCMain : public CWinApp 
@@ -31,6 +33,12 @@ private:
 	// Object properties window
 	CObjectOptions m_ObjectProperties;
 
+	// Camera properties window
+	CCameraOptions m_CameraProperties;
+
+	// Spawn properties window
+	CObjectSpawnOptions m_SpawnProperties;
+
 	int m_width;		
 	int m_height;
 	
@@ -42,6 +50,12 @@ private:
 
 	// Display object properties window
 	afx_msg void MenuEditObjectProperties();
+
+	// Display camera properties window
+	afx_msg void MenuEditCameraProperties();
+
+	// Display object spawn properties windo
+	afx_msg void MenuEditSpawnProperties();
 
 
 	DECLARE_MESSAGE_MAP()	// required macro for message map functionality  One per class

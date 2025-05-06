@@ -53,14 +53,29 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 
-	// Allows for modification of display object settings within MFC window
-	std::vector<DisplayObject> GetDisplayList();
-
-	DisplayObject GetDisplayObject(int ID);
-	void EditDisplayObject(DisplayObject NewSettings, int ID);
+	// Instantiation and Deletion
+	void SpawnNewDisplayObject(DisplayObject newObject);
+	void DeleteSelectedDisplayObject();
 
 	// Selected Object ID
 	int m_SelectedObjectID = -1;
+
+	//tool specific
+	std::vector<DisplayObject>			m_displayList;
+	DisplayChunk						m_displayChunk;
+	InputCommands						m_InputCommands;
+
+	// Prevent selection disappearing if object properties window open
+	bool m_ObjectPropertiesOpen = false;
+
+	// Camera
+	std::shared_ptr<Camera> m_Camera;
+
+	// Mouse picking and object selection - public
+	bool m_HasSelected = false;
+
+	// Device resources.
+	std::shared_ptr<DX::DeviceResources>    m_deviceResources;
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -81,15 +96,8 @@ private:
 	// Draw debug cube for selecting an object
 	void DrawCubeForDisplayObject(int ObjectID, DirectX::FXMVECTOR Colour = { 1, 0, 0, 1 });
 
-	//tool specific
-	std::vector<DisplayObject>			m_displayList;
-	DisplayChunk						m_displayChunk;
-	InputCommands						m_InputCommands;
-
 	//control variables
 	bool m_grid;							//grid rendering on / off
-	// Device resources.
-    std::shared_ptr<DX::DeviceResources>    m_deviceResources;
 
     // Rendering loop timer.
     DX::StepTimer                           m_timer;
@@ -99,9 +107,6 @@ private:
     std::unique_ptr<DirectX::Keyboard>      m_keyboard;
     std::unique_ptr<DirectX::Mouse>         m_mouse;
 
-	// Camera
-	std::unique_ptr<Camera> m_Camera;
-
 	// Window
 	RECT m_WindowRect;
 
@@ -110,8 +115,10 @@ private:
 
 	// Mouse picking and object selection
 	bool m_IsHovering = false;
-	bool m_HasSelected = false;
 	bool m_HasExecutedClickFunctionality = false;
+
+	// Force focus key to only activate once
+	bool m_HasFocused = false;
 
     // DirectXTK objects.
     std::unique_ptr<DirectX::CommonStates>                                  m_states;
@@ -123,8 +130,6 @@ private:
     std::unique_ptr<DirectX::SpriteBatch>                                   m_sprites;
     std::unique_ptr<DirectX::SpriteFont>                                    m_font;
 	std::unique_ptr<DirectX::SpriteFont>                                    m_font2;
-	std::unique_ptr<DirectX::SpriteFont>                                    m_font3;
-	std::unique_ptr<DirectX::SpriteFont>                                    m_font4;
 
 #ifdef DXTK_AUDIO
     std::unique_ptr<DirectX::AudioEngine>                                   m_audEngine;
